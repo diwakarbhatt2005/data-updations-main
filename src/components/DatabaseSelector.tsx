@@ -6,7 +6,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Database, Loader2, AlertCircle } from 'lucide-react';
 import { useDashboardStore } from '@/store/dashboardStore';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+// ...existing code...
 import { fetchDropdownData, TableInfo } from '../api/fetchDropdownData';
+// filepath: c:\Users\dev\OneDrive\Desktop\A.OFFICE WORK\data-updations-main\src\components\DatabaseSelector.tsx
+// filepath: c:\Users\dev\OneDrive\Desktop\A.OFFICE WORK\data-updations-main\src\components\DatabaseSelector.tsx
+// ...existing code...
 
 export const DatabaseSelector = () => {
   const navigate = useNavigate();
