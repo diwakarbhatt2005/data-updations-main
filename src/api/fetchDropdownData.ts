@@ -10,7 +10,8 @@ export interface TablesApiResponse {
 }
 
 export async function fetchDropdownData(): Promise<TableInfo[]> {
-  const response = await fetch('http://168.231.103.13:6004/api/simulator/tables', {
+const apiUrl = import.meta.env.VITE_TABLES || 'http://default-url.com/api/simulator/tables';
+  const response = await fetch(apiUrl, {
     method: 'GET',
     headers: {
       'accept': 'application/json',
