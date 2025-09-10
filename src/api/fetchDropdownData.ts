@@ -1,53 +1,82 @@
 export interface TableInfo {
-
-  table_name: string;
-
-  description: string | null;
-
+  table_name: string;
+  description: string | null;
 }
-
-
 
 export interface TablesApiResponse {
-
-  status: string;
-
-  tables: TableInfo[];
-
+  status: string;
+  tables: TableInfo[];
 }
-
-
 
 export async function fetchDropdownData(): Promise<TableInfo[]> {
+  const apiUrl = import.meta.env.VITE_TABLES || 'http://default-url.com/api/simulator/tables';
 
-const apiUrl = import.meta.env.VITE_TABLES || 'http://default-url.com/api/simulator/tables';
+  const response = await fetch(apiUrl, {
+    method: 'GET',
+    headers: {
+      'accept': 'application/json',
+    },
+  });
 
-  const response = await fetch(apiUrl, {
+  if (!response.ok) {
+    throw new Error('Failed to fetch tables');
+  }
 
-    method: 'GET',
+  const data: TablesApiResponse = await response.json();
 
-    headers: {
-
-      'accept': 'application/json',
-
-    },
-
-  });
-
-
-
-  if (!response.ok) {
-
-    throw new Error('Failed to fetch tables');
-
-  }
-
-
-
-  const data = await response.json();
-
-  // API returns: { status: "success", tables: [{ table_name, description }, ...] }
-
-  return data.tables;
-
+  // API returns: { status: "success", tables: [{ table_name, description }, ...] }
+  return data.tables;
 }
+
+// export interface TableInfo {
+
+//   table_name: string;
+
+//   description: string | null;
+
+// }
+
+
+
+// export interface TablesApiResponse {
+
+//   status: string;
+
+//   tables: TableInfo[];
+
+// }
+
+
+
+// export async function fetchDropdownData(): Promise<TableInfo[]> {
+
+// const apiUrl = import.meta.env.VITE_TABLES || 'http://default-url.com/api/simulator/tables';
+
+//   const response = await fetch(apiUrl, {
+
+//     method: 'GET',
+
+//     headers: {
+
+//       'accept': 'application/json',
+
+//     },
+
+//   });
+
+
+
+//   if (!response.ok) {
+
+//     throw new Error('Failed to fetch tables');
+
+//   }
+
+
+
+//   const data = await response.json();
+
+//   // API returns: { status: "success", tables: [{ table_name, description }, ...] }
+// return data.tables;
+
+// }
