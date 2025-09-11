@@ -101,7 +101,7 @@ export const DatabaseSelector = () => {
                 <SelectTrigger className="h-12 border-2 transition-smooth focus:border-primary hover:border-primary/50">
                   <SelectValue placeholder="Choose Table..." />
                 </SelectTrigger>
-                <SelectContent className="bg-white shadow-elevation border-0">
+                <SelectContent className="bg-white shadow-elevation border-0 max-h-64 overflow-y-auto z-50">
                   {tables.map((table) => (
                     <SelectItem 
                       key={table} 
