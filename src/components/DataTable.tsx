@@ -1,4 +1,6 @@
 import { useState, useMemo, useCallback } from 'react';
+import { ValidationError } from '@/api/tableData';
+import { bulkReplaceTableDataApi3 } from '@/api/api3';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -40,14 +42,30 @@ export const DataTable = () => {
     setError,
   } = useDashboardStore();
 
+  // Handles cell value change
+  const handleCellChange = (rowIndex: number, field: string, value: any) => {
+    updateCell(rowIndex, field, value);
+  };
+
   const columns = useMemo(() => {
     if (tableData.length === 0) return [];
     return Object.keys(tableData[0]);
   }, [tableData]);
 
-  const handleCellChange = useCallback((rowIndex: number, field: string, value: string) => {
-    updateCell(rowIndex, field, value);
-  }, [updateCell]);
+  // Helper: guess column type by scanning data
+  const getColumnType = (col: string): 'int' | 'string' => {
+    // If all values are numbers (or empty), treat as int
+    let isInt = true;
+    for (const row of tableData) {
+      const v = row[col];
+      if (v === '' || v === null || v === undefined) continue;
+      if (isNaN(Number(v)) || String(v).includes('.')) {
+        isInt = false;
+        break;
+      }
+    }
+    return isInt ? 'int' : 'string';
+  };
 
   const handlePaste = useCallback((e: React.ClipboardEvent, rowIndex: number, field: string) => {
     e.preventDefault();
@@ -108,26 +126,63 @@ export const DataTable = () => {
   }, [columns, tableData, updateCell, addMultipleRows, toast]);
 
   const handleSave = async () => {
+    if (!selectedDatabase) return;
     try {
       setIsSaving(true);
       setError(null);
 
-      // Mock save - simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Assign unique IDs to rows with missing/null/empty id before saving
+      let maxId = Math.max(0, ...tableData.map(row => Number(row.id) || 0));
+      let safeData = tableData.map(row => {
+        if (row.id === undefined || row.id === null || row.id === '') {
+          maxId += 1;
+          return { ...row, id: String(maxId) };
+        }
+        return row;
+      });
 
-      // Save changes to original data to persist them
+      // Remove id field from each row for API3 (if not needed by backend)
+      safeData = safeData.map(({ id, ...rest }) => ({ ...rest }));
+
+      // Check for any row that still has null/undefined/empty id (should not happen)
+      // (skip this check since id is removed)
+
+      // Call API to bulk replace
+      await bulkReplaceTableDataApi3(selectedDatabase, safeData);
       saveChanges();
       toast({
-        title: "Success",
-        description: "Data updated successfully!",
+        title: 'Success',
+        description: 'Data updated successfully!',
       });
-    } catch (err) {
-      setError('Failed to save changes. Please try again.');
-      toast({
-        title: "Error",
-        description: "Failed to save changes. Please try again.",
-        variant: "destructive",
-      });
+    } catch (err: any) {
+      if (err && err.detail) {
+        let msg = '';
+        if (Array.isArray(err.detail)) {
+          msg = err.detail.map((d: any) => d.msg).join(', ');
+        } else {
+          msg = err.detail;
+        }
+        setError(msg);
+        toast({
+          title: 'Validation Error',
+          description: msg,
+          variant: 'destructive',
+        });
+      } else if (err && err.message) {
+        setError(err.message);
+        toast({
+          title: 'Error',
+          description: err.message,
+          variant: 'destructive',
+        });
+      } else {
+        setError('Failed to save changes. Please try again.');
+        toast({
+          title: 'Error',
+          description: 'Failed to save changes. Please try again.',
+          variant: 'destructive',
+        });
+      }
     } finally {
       setIsSaving(false);
     }
@@ -265,6 +320,7 @@ export const DataTable = () => {
             <table className="w-full border-collapse">
               <thead className="sticky top-0 bg-table-header text-white z-10 shadow-md">
                 <tr>
+                  {/* Removed row number column */}
                   {isEditMode && (
                     <th className="p-4 text-left font-medium bg-table-header sticky left-0 z-20">Actions</th>
                   )}
@@ -326,6 +382,7 @@ export const DataTable = () => {
                     key={rowIndex}
                     className="border-b border-table-border hover:bg-table-row-hover transition-smooth"
                   >
+                    {/* Removed row number cell */}
                     {isEditMode && (
                       <td className="p-4 sticky left-0 bg-background z-15 border-r border-table-border">
                         <Button

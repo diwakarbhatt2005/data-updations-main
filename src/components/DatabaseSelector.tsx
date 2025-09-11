@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { fetchTableNames } from '@/api/tables';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,8 +7,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Database, Loader2, AlertCircle } from 'lucide-react';
 import { useDashboardStore } from '@/store/dashboardStore';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { fetchTableData } from '@/api/tableData';
 // ...existing code...
-import { fetchDropdownData, TableInfo } from '../api/fetchDropdownData';
+
 // filepath: c:\Users\dev\OneDrive\Desktop\A.OFFICE WORK\data-updations-main\src\components\DatabaseSelector.tsx
 // filepath: c:\Users\dev\OneDrive\Desktop\A.OFFICE WORK\data-updations-main\src\components\DatabaseSelector.tsx
 // ...existing code...
@@ -15,7 +17,7 @@ import { fetchDropdownData, TableInfo } from '../api/fetchDropdownData';
 export const DatabaseSelector = () => {
   const navigate = useNavigate();
   const [selectedDb, setSelectedDb] = useState<string>('');
-  const [tables, setTables] = useState<TableInfo[]>([]);
+  const [tables, setTables] = useState<string[]>([]);
   
   const {
     isLoading,
@@ -32,7 +34,7 @@ export const DatabaseSelector = () => {
       setLoading(true);
       setError(null);
       try {
-        const apiTables = await fetchDropdownData();
+        const apiTables = await fetchTableNames();
         setTables(apiTables);
       } catch (err) {
         setError('Failed to fetch tables. Please try again.');
@@ -49,13 +51,13 @@ export const DatabaseSelector = () => {
       setLoading(true);
       setError(null);
       setSelectedDatabase(selectedDb);
-
-      // You should fetch table data here using another API
-      // For now, just simulate navigation
-      setTableData([]); // Clear or set actual data here
+      // Fetch table data immediately
+      const data = await fetchTableData(selectedDb, 1000, 0);
+      setTableData(data.data);
       navigate('/view-data');
     } catch (err) {
       setError('Failed to fetch data. Please check your connection and try again.');
+      setTableData([]);
     } finally {
       setLoading(false);
     }
@@ -102,11 +104,11 @@ export const DatabaseSelector = () => {
                 <SelectContent className="bg-white shadow-elevation border-0">
                   {tables.map((table) => (
                     <SelectItem 
-                      key={table.table_name} 
-                      value={table.table_name}
+                      key={table} 
+                      value={table}
                       className="hover:bg-gradient-hover transition-smooth"
                     >
-                      {table.table_name.replace('_', ' ').toUpperCase()}
+                      {table.replace(/_/g, ' ').toUpperCase()}
                     </SelectItem>
                   ))}
                 </SelectContent>

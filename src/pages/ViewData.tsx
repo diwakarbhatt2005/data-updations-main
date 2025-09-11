@@ -1,19 +1,51 @@
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { DataTable } from '@/components/DataTable';
 import { ChatBot } from '@/components/ChatBot';
 import { useDashboardStore } from '@/store/dashboardStore';
+import { fetchTableData, ValidationError } from '@/api/tableData';
 
 const ViewData = () => {
   const navigate = useNavigate();
-  const { selectedDatabase } = useDashboardStore();
+  const {
+    selectedDatabase,
+    setTableData,
+    setLoading,
+    setError,
+  } = useDashboardStore();
 
-  // Redirect to home if no database selected
-  if (!selectedDatabase) {
-    navigate('/');
-    return null;
-  }
+
+  // Fetch table data when selectedDatabase changes
+  useEffect(() => {
+    if (!selectedDatabase) {
+      navigate('/');
+      return;
+    }
+    const fetchData = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await fetchTableData(selectedDatabase, 1000, 0);
+        setTableData(data.data);
+      } catch (err: any) {
+        // Handle validation error from API
+        if (err && err.detail) {
+          const validation: ValidationError = err;
+          setError(validation.detail.map((d) => d.msg).join(', '));
+        } else if (err && err.message) {
+          setError(err.message);
+        } else {
+          setError('Failed to fetch table data.');
+        }
+        setTableData([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, [selectedDatabase, navigate, setTableData, setLoading, setError]);
 
   return (
     <div className="min-h-screen bg-dashboard-bg">

@@ -90,7 +90,13 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
       const firstRow = tableData[0];
       const newRow: DatabaseRow = {};
       Object.keys(firstRow).forEach(key => {
-        newRow[key] = '';
+        if (key === 'id') {
+          // Generate a unique id (max id + 1 or 1 if none)
+          const maxId = Math.max(0, ...tableData.map(r => Number(r.id) || 0));
+          newRow[key] = String(maxId + 1);
+        } else {
+          newRow[key] = '';
+        }
       });
       const newTableData = [...tableData, newRow];
       set({ tableData: newTableData });
@@ -103,15 +109,18 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
     if (tableData.length > 0 && count > 0) {
       const firstRow = tableData[0];
       const newRows: DatabaseRow[] = [];
-      
+      let maxId = Math.max(0, ...tableData.map(r => Number(r.id) || 0));
       for (let i = 0; i < count; i++) {
         const newRow: DatabaseRow = {};
         Object.keys(firstRow).forEach(key => {
-          newRow[key] = '';
+          if (key === 'id') {
+            newRow[key] = String(++maxId);
+          } else {
+            newRow[key] = '';
+          }
         });
         newRows.push(newRow);
       }
-      
       const newTableData = [...tableData, ...newRows];
       set({ tableData: newTableData });
       console.log(`Added ${count} rows, new length:`, newTableData.length);
